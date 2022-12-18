@@ -1,0 +1,2 @@
+spring.application.name: game-service
+Server.port: 8081
