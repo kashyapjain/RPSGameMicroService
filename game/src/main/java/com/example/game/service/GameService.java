@@ -32,7 +32,18 @@ public class GameService {
 
     public Mono<String> getResult(String player)
     {
-        return getRandomMove().flatMap(move -> Mono.just(getWinner(move,player)));
+        return inputIsValid(player).flatMap(valid ->
+        {
+            if(valid)
+            {
+                return getRandomMove().flatMap(move -> Mono.just(getWinner(move,player)));
+            }
+            return Mono.just("Invalid input");
+        });
+    }
+
+    private Mono<Boolean> inputIsValid(String player) {
+        return moves.any(item -> item.equals(player));
     }
 
     private String getWinner(String computer,String player)
@@ -41,7 +52,7 @@ public class GameService {
         String Paper = "Paper";
         String Scissors = "Scissors";
 
-        if(computer == player)
+        if(computer.equals(player))
         {
             return "It is a tie";
         }
