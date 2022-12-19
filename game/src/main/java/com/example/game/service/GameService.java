@@ -25,9 +25,11 @@ public class GameService {
 
     private Mono<String> getRandomMove()
     {
-        int len = gameRepository.getMovesLength().block();
-        int moveIndex = new Random().nextInt(len);
-        return  moves.elementAt(moveIndex);
+        return gameRepository.getMovesLength().flatMap(len ->
+        {
+            int moveIndex = new Random().nextInt(len);
+            return  moves.elementAt(moveIndex);
+        });
     }
 
     public Mono<String> getResult(String player)
@@ -36,7 +38,7 @@ public class GameService {
         {
             if(valid)
             {
-                return getRandomMove().flatMap(move -> Mono.just(getWinner(move,player)));
+                return getRandomMove().flatMap(computer -> getWinner(computer,player));
             }
             return Mono.just("Invalid input");
         });
@@ -46,32 +48,35 @@ public class GameService {
         return moves.any(item -> item.equals(player));
     }
 
-    private String getWinner(String computer,String player)
+    private Mono<String> getWinner(String computer,String player)
     {
-        String Rock = "Rock";
-        String Paper = "Paper";
-        String Scissors = "Scissors";
-
         if(computer.equals(player))
         {
-            return "It is a tie";
+            return Mono.just("It is a tie");
         }
 
-        if(player.equals(Rock) && computer.equals(Scissors))
-        {
-            return "Player wins";
-        }
+        return moves.elementAt(0).flatMap(rock ->
+                moves.elementAt(1).flatMap(paper ->
+                {
+                    return moves.elementAt(2).flatMap(scissors ->
+                    {
+                        if(player.equals(rock) && computer.equals(scissors))
+                        {
+                            return Mono.just("Player wins");
+                        }
 
-        if(player.equals(Paper) && computer.equals(Rock))
-        {
-            return "Player wins";
-        }
+                        if(player.equals(paper) && computer.equals(rock))
+                        {
+                            return Mono.just("Player wins");
+                        }
 
-        if(player.equals(Scissors) && computer.equals(Paper))
-        {
-            return "Player wins";
-        }
+                        if(player.equals(scissors) && computer.equals(paper))
+                        {
+                            return Mono.just("Player wins");
+                        }
 
-        return "Computer wins";
+                        return Mono.just("Computer wins");
+                    }) ;
+                }));
     }
 }
